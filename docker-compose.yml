@@ -1,0 +1,11 @@
+
+version: '3'
+
+services:
+  prompt-creator-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    restart: unless-stopped
