@@ -1,33 +1,25 @@
-
-# Build stage
+# Étape 1: Construire l'application React avec Vite
 FROM node:20-alpine AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Copier les fichiers package.json et installer les dépendances
+COPY package.json package-lock.json ./
+RUN npm install --legacy-peer-deps && npm install -g vite@6.2.1
 
-# Install dependencies
-RUN npm ci
-
-# Copy all files
-COPY . .
-
-# Build the app
+# Copier tout le projet et builder l'application
+COPY . ./
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
+# Étape 2: Servir l'application avec Vite
+FROM node:20-alpine
+WORKDIR /app
 
-# Copy built files from build stage to nginx server
-COPY --from=build /app/dist /usr/share/nginx/html
+# Réinstaller Vite dans l'image finale
+RUN npm install -g vite@6.2.1 serve
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copier les fichiers compilés
+COPY --from=build /app/dist ./dist
 
-# Expose port 80
-EXPOSE 80
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Démarrer Vite en gardant le container actif
+CMD ["sh", "-c", "vite preview --port 3001 && tail -f /dev/null"]
