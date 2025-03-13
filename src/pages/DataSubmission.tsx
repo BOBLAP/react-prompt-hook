@@ -10,7 +10,7 @@ import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { PromptType } from "@/components/PromptCard";
-import { useJWT } from "@/hooks/useJWT";
+import { useBasicAuth } from "@/hooks/useBasicAuth";
 
 type DataSubmissionProps = {
   theme: string;
@@ -31,7 +31,7 @@ const DataSubmission = ({
 }: DataSubmissionProps) => {
   const [submissionState, setSubmissionState] = useState<SubmissionState>("idle");
   const [response, setResponse] = useState<any>(null);
-  const { generateJWT } = useJWT();
+  const { generateBasicAuth } = useBasicAuth();
 
   const handleSubmit = async () => {
     if (!selectedPrompt || !selectedNarrative) {
@@ -48,8 +48,8 @@ const DataSubmission = ({
         narrative: selectedNarrative,
       };
 
-      // Generate JWT token for authentication
-      const token = generateJWT();
+      // Generate Basic Auth token for authentication
+      const authHeader = generateBasicAuth();
 
       const url = import.meta.env.PROD 
         ? "https://n8n.lagratte.net/webhook/aa5d0585-dc51-4609-a503-4837195fc08d"
@@ -59,7 +59,7 @@ const DataSubmission = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Authorization": authHeader || '',
         },
         body: JSON.stringify(payload),
       });
