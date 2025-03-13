@@ -6,12 +6,16 @@ import PromptSelector from "./PromptSelector";
 import NarrativeSelector from "./NarrativeSelector";
 import DataSubmission from "./DataSubmission";
 import { PromptType } from "@/components/PromptCard";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [theme, setTheme] = useState("");
   const [selectedPrompt, setSelectedPrompt] = useState<PromptType | null>(null);
   const [selectedNarrative, setSelectedNarrative] = useState<PromptType | null>(null);
+  const { logout } = useAuth();
 
   const handleNext = () => {
     setCurrentStep((prev) => prev + 1);
@@ -73,6 +77,17 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <div className="fixed top-4 right-4 z-10">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={logout}
+          className="bg-opacity-75 backdrop-blur-sm"
+        >
+          <LogOut className="mr-2 h-4 w-4" /> Déconnexion
+        </Button>
+      </div>
+      
       <AnimatePresence mode="wait">
         {renderCurrentStep()}
       </AnimatePresence>
