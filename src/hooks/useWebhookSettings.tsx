@@ -1,5 +1,6 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
+import { useBasicAuth } from "./useBasicAuth";
 
 type WebhookSettingsContextType = {
   webhookUrl: string;
@@ -14,6 +15,8 @@ export const WebhookSettingsProvider = ({ children }: { children: ReactNode }) =
     return localStorage.getItem("webhookUrl") || "https://n8n.lagratte.net/webhook-test/aa5d0585-dc51-4609-a503-4837195fc08d";
   });
 
+  const { generateBasicAuth } = useBasicAuth();
+
   useEffect(() => {
     localStorage.setItem("webhookUrl", webhookUrl);
   }, [webhookUrl]);
@@ -25,7 +28,6 @@ export const WebhookSettingsProvider = ({ children }: { children: ReactNode }) =
 
   const testWebhook = async (data: any): Promise<boolean> => {
     try {
-      const { generateBasicAuth } = useBasicAuth();
       const authHeader = generateBasicAuth();
       
       if (!authHeader) {
