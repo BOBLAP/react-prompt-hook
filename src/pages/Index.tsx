@@ -8,13 +8,15 @@ import DataSubmission from "./DataSubmission";
 import { PromptType } from "@/components/PromptCard";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings as SettingsIcon } from "lucide-react";
+import Settings from "./Settings";
 
 const Index = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [theme, setTheme] = useState("");
   const [selectedPrompt, setSelectedPrompt] = useState<PromptType | null>(null);
   const [selectedNarrative, setSelectedNarrative] = useState<PromptType | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { logout } = useAuth();
 
   const handleNext = () => {
@@ -77,7 +79,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="fixed top-4 right-4 z-10">
+      <div className="fixed top-4 right-4 z-10 flex gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setIsSettingsOpen(true)}
+          className="bg-opacity-75 backdrop-blur-sm"
+        >
+          <SettingsIcon className="mr-2 h-4 w-4" /> Paramètres
+        </Button>
         <Button 
           variant="outline" 
           size="sm" 
@@ -87,6 +97,12 @@ const Index = () => {
           <LogOut className="mr-2 h-4 w-4" /> Déconnexion
         </Button>
       </div>
+      
+      {/* Settings Modal */}
+      <Settings 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
       
       <AnimatePresence mode="wait">
         {renderCurrentStep()}

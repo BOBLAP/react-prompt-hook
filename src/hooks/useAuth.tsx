@@ -2,16 +2,35 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Define default credentials
+const DEFAULT_USERNAME = "bob";
+const DEFAULT_PASSWORD = "1234";
+
+type Credentials = {
+  username: string;
+  password: string;
+};
+
 type AuthContextType = {
   isAuthenticated: boolean;
   login: (username: string, password: string) => boolean;
   logout: () => void;
+  credentials: Credentials;
+  updateCredentials: (newUsername: string, newPassword: string) => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [credentials, setCredentials] = useState<Credentials>(() => {
+    // Try to load saved credentials or use defaults
+    const savedCredentials = localStorage.getItem("credentials");
+    return savedCredentials 
+      ? JSON.parse(savedCredentials) 
+      : { username: DEFAULT_USERNAME, password: DEFAULT_PASSWORD };
+  });
+  
   const navigate = useNavigate();
 
   // Check if user is already authenticated on mount
@@ -23,8 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (username: string, password: string): boolean => {
-    // Hard-coded credentials
-    if (username === "bob" && password === "1234") {
+    if (username === credentials.username && password === credentials.password) {
       setIsAuthenticated(true);
       localStorage.setItem("auth", "true");
       return true;
@@ -38,8 +56,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate("/login");
   };
 
+  const updateCredentials = (newUsername: string, newPassword: string) => {
+    const newCredentials = { 
+      username: newUsername, 
+      password: newPassword 
+    };
+    setCredentials(newCredentials);
+    localStorage.setItem("credentials", JSON.stringify(newCredentials));
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      login, 
+      logout, 
+      credentials,
+      updateCredentials 
+    }}>
       {children}
     </AuthContext.Provider>
   );
