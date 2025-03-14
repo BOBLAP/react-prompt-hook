@@ -36,11 +36,14 @@ const DataSubmission = ({
     setIsSubmitting(true);
     setSubmissionResult({ status: null, message: null });
 
+    // Prepare the data with the correct fields and full content
     const data = {
       theme,
-      prompt: selectedPrompt?.text,
-      narrative: selectedNarrative?.text,
+      prompt: selectedPrompt?.text || selectedPrompt?.content,
+      narrative: selectedNarrative?.text || selectedNarrative?.content,
     };
+    
+    console.log("Submitting data:", data);
 
     try {
       const headers: Record<string, string> = {
@@ -49,6 +52,8 @@ const DataSubmission = ({
       
       if (authEnabled) {
         const authHeader = generateBasicAuth();
+        console.log("Authentication header generated:", authHeader ? "Yes" : "No");
+        
         if (!authHeader) {
           setSubmissionResult({
             status: "error",
@@ -65,6 +70,8 @@ const DataSubmission = ({
         headers["Authorization"] = authHeader;
       }
 
+      console.log("Request headers:", headers);
+      
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers,
@@ -82,13 +89,14 @@ const DataSubmission = ({
           variant: "default",
         });
       } else {
+        const errorText = await response.text();
         setSubmissionResult({
           status: "error",
-          message: `Échec de l'envoi: ${response.statusText}`
+          message: `Échec de l'envoi: ${response.status} ${response.statusText} - ${errorText}`
         });
         toast({
           title: "Échec de l'envoi",
-          description: `${response.statusText}`,
+          description: `${response.status} ${response.statusText} - ${errorText}`,
           variant: "destructive",
         });
       }
@@ -139,12 +147,12 @@ const DataSubmission = ({
                 
                 <div className="bg-white/80 rounded-lg p-4 border border-blue-100 transition-all hover:shadow-md">
                   <p className="text-sm text-muted-foreground mb-1">Prompt</p>
-                  <p className="font-medium text-foreground">{selectedPrompt?.text}</p>
+                  <p className="font-medium text-foreground">{selectedPrompt?.content || selectedPrompt?.text || "Aucun prompt sélectionné"}</p>
                 </div>
                 
                 <div className="bg-white/80 rounded-lg p-4 border border-blue-100 transition-all hover:shadow-md">
                   <p className="text-sm text-muted-foreground mb-1">Narrative</p>
-                  <p className="font-medium text-foreground">{selectedNarrative?.text}</p>
+                  <p className="font-medium text-foreground">{selectedNarrative?.content || selectedNarrative?.text || "Aucune narrative sélectionnée"}</p>
                 </div>
               </div>
             </div>

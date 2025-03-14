@@ -12,10 +12,10 @@ const WebhookSettingsContext = createContext<WebhookSettingsContextType | null>(
 
 export const WebhookSettingsProvider = ({ children }: { children: ReactNode }) => {
   const [webhookUrl, setWebhookUrl] = useState<string>(() => {
-    return localStorage.getItem("webhookUrl") || "https://n8n.lagratte.net/webhook-test/aa5d0585-dc51-4609-a503-4837195fc08d";
+    return localStorage.getItem("webhookUrl") || "https://n8n.lagratte.net/webhook-test/b76fe489-7e61-4bca-a65b-8cae9f677655";
   });
 
-  const { generateBasicAuth } = useBasicAuth();
+  const { generateBasicAuth, authEnabled } = useBasicAuth();
 
   useEffect(() => {
     localStorage.setItem("webhookUrl", webhookUrl);
@@ -28,20 +28,37 @@ export const WebhookSettingsProvider = ({ children }: { children: ReactNode }) =
 
   const testWebhook = async (data: any): Promise<boolean> => {
     try {
+      console.log("Testing webhook with URL:", webhookUrl);
+      console.log("Auth enabled:", authEnabled);
+      
       const headers: Record<string, string> = {
         "Content-Type": "application/json"
       };
       
-      const authHeader = generateBasicAuth();
-      if (authHeader) {
-        headers["Authorization"] = authHeader;
+      if (authEnabled) {
+        const authHeader = generateBasicAuth();
+        console.log("Auth header generated:", authHeader ? "Yes" : "No");
+        
+        if (authHeader) {
+          headers["Authorization"] = authHeader;
+        } else {
+          console.warn("Failed to generate auth header despite auth being enabled");
+        }
       }
 
+      console.log("Request headers:", headers);
+      console.log("Request payload:", data);
+      
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers,
         body: JSON.stringify(data || { test: true })
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Webhook test failed: ${response.status} ${response.statusText} - ${errorText}`);
+      }
 
       return response.ok;
     } catch (error) {

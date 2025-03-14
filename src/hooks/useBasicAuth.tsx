@@ -12,7 +12,7 @@ export const useBasicAuth = () => {
     const savedAuth = localStorage.getItem('basicAuthConfig');
     return savedAuth 
       ? JSON.parse(savedAuth) 
-      : { username: "toto", password: "123456789", enabled: true };
+      : { username: "toto", password: "1234", enabled: true };
   });
 
   useEffect(() => {
@@ -30,11 +30,13 @@ export const useBasicAuth = () => {
   const generateBasicAuth = () => {
     try {
       if (!credentials.enabled) {
+        console.log("Basic auth is disabled");
         return null; // Return null if authentication is disabled
       }
       
       // Create the Basic Auth string: "Basic " + base64(username:password)
       const credString = `${credentials.username}:${credentials.password}`;
+      console.log("Generating auth with credentials:", credString);
       const base64Credentials = btoa(credString);
       return `Basic ${base64Credentials}`;
     } catch (error) {
