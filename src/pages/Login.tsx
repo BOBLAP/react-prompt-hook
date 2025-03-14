@@ -88,10 +88,6 @@ const Login = () => {
           <Button type="submit" className="w-full btn-accent py-6">
             <LogIn className="mr-2 h-4 w-4" /> Se connecter
           </Button>
-
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Utilisateur: bob | Mot de passe: 1234</p>
-          </div>
         </form>
       </motion.div>
     </div>
