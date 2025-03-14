@@ -10,14 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Settings as SettingsIcon, Save, Lock, Webhook, Key, ArrowLeft, Check } from "lucide-react";
+import { Settings as SettingsIcon, Save, Lock, Webhook, Key, ArrowLeft, Check, Shield } from "lucide-react";
 
 const Settings = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const { credentials, updateCredentials } = useAuth();
   const { webhookUrl, updateWebhookUrl, testWebhook } = useWebhookSettings();
+  const { 
+    authEnabled, 
+    toggleAuthEnabled, 
+    updateCredentials: updateBasicAuthCredentials,
+    authUsername,
+    authPassword
+  } = useBasicAuth();
   
   // Form state
   const [newUsername, setNewUsername] = useState(credentials.username);
@@ -25,6 +33,11 @@ const Settings = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void })
   const [newWebhookUrl, setNewWebhookUrl] = useState(webhookUrl);
   const [isWebhookTesting, setIsWebhookTesting] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+
+  // Basic Auth form state
+  const [newBasicAuthUsername, setNewBasicAuthUsername] = useState(authUsername);
+  const [newBasicAuthPassword, setNewBasicAuthPassword] = useState("");
+  const [basicAuthEnabled, setBasicAuthEnabled] = useState(authEnabled);
 
   const handleSaveCredentials = () => {
     if (!newUsername) {
@@ -77,14 +90,36 @@ const Settings = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void })
     // Reset to defaults
     updateCredentials("bob", "1234");
     updateWebhookUrl("https://n8n.lagratte.net/webhook-test/aa5d0585-dc51-4609-a503-4837195fc08d");
+    updateBasicAuthCredentials("toto", "123456789");
+    toggleAuthEnabled(true);
     
     // Update form state
     setNewUsername("bob");
     setNewPassword("");
     setNewWebhookUrl("https://n8n.lagratte.net/webhook-test/aa5d0585-dc51-4609-a503-4837195fc08d");
+    setNewBasicAuthUsername("toto");
+    setNewBasicAuthPassword("");
+    setBasicAuthEnabled(true);
     
     setIsResetConfirmOpen(false);
     toast.success("Paramètres réinitialisés avec succès");
+  };
+
+  const handleSaveBasicAuth = () => {
+    // Update the authentication state
+    toggleAuthEnabled(basicAuthEnabled);
+    
+    // If credentials are changed, update them
+    if (newBasicAuthUsername !== authUsername || 
+       (newBasicAuthPassword && newBasicAuthPassword !== authPassword)) {
+      const password = newBasicAuthPassword || authPassword;
+      updateBasicAuthCredentials(newBasicAuthUsername, password);
+      setNewBasicAuthPassword(""); // Clear password field after save
+      toast.success("Paramètres d'authentification mis à jour avec succès");
+    } else if (basicAuthEnabled !== authEnabled) {
+      // Only show toast if just the enabled state changed
+      toast.success(`Authentification ${basicAuthEnabled ? "activée" : "désactivée"}`);
+    }
   };
 
   return (
@@ -141,8 +176,66 @@ const Settings = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void })
               </div>
             </div>
             
+            {/* Basic Auth Settings */}
+            <div className="space-y-4 pt-2 border-t">
+              <h3 className="text-lg font-medium flex items-center gap-2">
+                <Shield className="h-5 w-5" /> Authentification par Header
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="basicAuthEnabled" 
+                    checked={basicAuthEnabled}
+                    onCheckedChange={(checked) => setBasicAuthEnabled(checked === true)}
+                  />
+                  <Label 
+                    htmlFor="basicAuthEnabled"
+                    className="text-base font-medium cursor-pointer"
+                  >
+                    Activer l'authentification par header
+                  </Label>
+                </div>
+                
+                <div className={basicAuthEnabled ? "space-y-3" : "space-y-3 opacity-50"}>
+                  <div className="space-y-2">
+                    <Label htmlFor="basicAuthUsername">Nom d'utilisateur</Label>
+                    <Input
+                      id="basicAuthUsername"
+                      value={newBasicAuthUsername}
+                      onChange={(e) => setNewBasicAuthUsername(e.target.value)}
+                      placeholder="Nom d'utilisateur pour l'authentification"
+                      disabled={!basicAuthEnabled}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="basicAuthPassword">
+                      Mot de passe {" "}
+                      <span className="text-muted-foreground text-xs">(Laisser vide pour ne pas changer)</span>
+                    </Label>
+                    <Input
+                      id="basicAuthPassword"
+                      type="password"
+                      value={newBasicAuthPassword}
+                      onChange={(e) => setNewBasicAuthPassword(e.target.value)}
+                      placeholder="Mot de passe pour l'authentification"
+                      disabled={!basicAuthEnabled}
+                    />
+                  </div>
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  onClick={handleSaveBasicAuth}
+                >
+                  <Save className="mr-2 h-4 w-4" /> Enregistrer la configuration
+                </Button>
+              </div>
+            </div>
+            
             {/* Webhook Settings */}
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2 border-t">
               <h3 className="text-lg font-medium flex items-center gap-2">
                 <Webhook className="h-5 w-5" /> Configuration du Webhook
               </h3>
@@ -209,7 +302,11 @@ const Settings = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void })
               <br /><br />
               Identifiants par défaut : <br />
               - Nom d'utilisateur : bob<br />
-              - Mot de passe : 1234
+              - Mot de passe : 1234<br /><br />
+              Authentification par header : <br />
+              - Activée<br />
+              - Nom d'utilisateur : toto<br />
+              - Mot de passe : 123456789
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

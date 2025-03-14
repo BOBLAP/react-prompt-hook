@@ -24,7 +24,7 @@ const DataSubmission = ({
   onReset,
 }: DataSubmissionProps) => {
   const { webhookUrl, testWebhook } = useWebhookSettings();
-  const { generateBasicAuth } = useBasicAuth();
+  const { generateBasicAuth, authEnabled } = useBasicAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<{
@@ -43,26 +43,31 @@ const DataSubmission = ({
     };
 
     try {
-      const authHeader = generateBasicAuth();
-      if (!authHeader) {
-        setSubmissionResult({
-          status: "error",
-          message: "Échec de la génération de l'en-tête d'authentification"
-        });
-        toast({
-          title: "Erreur d'authentification",
-          description: "Impossible de générer l'en-tête d'authentification",
-          variant: "destructive",
-        });
-        return;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
+      
+      if (authEnabled) {
+        const authHeader = generateBasicAuth();
+        if (!authHeader) {
+          setSubmissionResult({
+            status: "error",
+            message: "Échec de la génération de l'en-tête d'authentification"
+          });
+          toast({
+            title: "Erreur d'authentification",
+            description: "Impossible de générer l'en-tête d'authentification",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        headers["Authorization"] = authHeader;
       }
 
       const response = await fetch(webhookUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authHeader,
-        },
+        headers,
         body: JSON.stringify(data),
       });
 

@@ -28,19 +28,18 @@ export const WebhookSettingsProvider = ({ children }: { children: ReactNode }) =
 
   const testWebhook = async (data: any): Promise<boolean> => {
     try {
-      const authHeader = generateBasicAuth();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json"
+      };
       
-      if (!authHeader) {
-        console.error("Failed to generate auth header");
-        return false;
+      const authHeader = generateBasicAuth();
+      if (authHeader) {
+        headers["Authorization"] = authHeader;
       }
 
       const response = await fetch(webhookUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": authHeader
-        },
+        headers,
         body: JSON.stringify(data || { test: true })
       });
 
