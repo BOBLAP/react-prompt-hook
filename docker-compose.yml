@@ -9,10 +9,8 @@ services:
     ports:
       - "80:80"
     volumes:
-      - config-data:/app/config
+      - ./config:/app/config
     environment:
       - PORT=80
+      - NODE_ENV=production
     restart: unless-stopped
-
-volumes:
-  config-data:
