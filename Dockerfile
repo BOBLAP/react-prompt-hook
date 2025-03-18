@@ -10,6 +10,7 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
+RUN npm install express
 
 # Copy all files
 COPY . .
@@ -18,16 +19,22 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM node:20-alpine
 
-# Copy built files from build stage to nginx server
-COPY --from=build /app/dist /usr/share/nginx/html
+# Set working directory
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install production dependencies
+COPY package*.json ./
+RUN npm ci --production
+RUN npm install express
+
+# Copy built files and server
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/src/server ./src/server
 
 # Expose port 80
 EXPOSE 80
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start server
+CMD ["node", "src/server/index.js"]

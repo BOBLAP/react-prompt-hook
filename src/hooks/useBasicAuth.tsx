@@ -1,5 +1,7 @@
 
 import { useState, useEffect } from 'react';
+import { fetchBasicAuthConfig, updateBasicAuthConfig } from '@/services/api';
+import { toast } from "sonner";
 
 type AuthCredentials = {
   username: string;
@@ -8,23 +10,61 @@ type AuthCredentials = {
 };
 
 export const useBasicAuth = () => {
-  const [credentials, setCredentials] = useState<AuthCredentials>(() => {
-    const savedAuth = localStorage.getItem('basicAuthConfig');
-    return savedAuth 
-      ? JSON.parse(savedAuth) 
-      : { username: "toto", password: "1234", enabled: true };
+  const [credentials, setCredentials] = useState<AuthCredentials>({
+    username: "toto", 
+    password: "1234", 
+    enabled: true
   });
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Charger la configuration depuis le serveur
   useEffect(() => {
-    localStorage.setItem('basicAuthConfig', JSON.stringify(credentials));
-  }, [credentials]);
+    const loadConfig = async () => {
+      try {
+        const config = await fetchBasicAuthConfig();
+        setCredentials(config);
+      } catch (error) {
+        console.error("Error loading basic auth config:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const updateCredentials = (username: string, password: string) => {
-    setCredentials(prev => ({ ...prev, username, password }));
+    loadConfig();
+  }, []);
+
+  const updateCredentials = async (username: string, password: string) => {
+    try {
+      const newCredentials = { ...credentials, username, password };
+      const success = await updateBasicAuthConfig(newCredentials);
+      
+      if (success) {
+        setCredentials(newCredentials);
+        toast.success("Paramètres d'authentification mis à jour avec succès");
+      } else {
+        toast.error("Erreur lors de la mise à jour des paramètres d'authentification");
+      }
+    } catch (error) {
+      console.error("Error updating basic auth credentials:", error);
+      toast.error("Erreur lors de la mise à jour des paramètres d'authentification");
+    }
   };
 
-  const toggleAuthEnabled = (enabled: boolean) => {
-    setCredentials(prev => ({ ...prev, enabled }));
+  const toggleAuthEnabled = async (enabled: boolean) => {
+    try {
+      const newCredentials = { ...credentials, enabled };
+      const success = await updateBasicAuthConfig(newCredentials);
+      
+      if (success) {
+        setCredentials(newCredentials);
+        toast.success(`Authentification ${enabled ? "activée" : "désactivée"}`);
+      } else {
+        toast.error("Erreur lors de la mise à jour des paramètres d'authentification");
+      }
+    } catch (error) {
+      console.error("Error toggling basic auth:", error);
+      toast.error("Erreur lors de la mise à jour des paramètres d'authentification");
+    }
   };
 
   const generateBasicAuth = () => {
@@ -44,6 +84,17 @@ export const useBasicAuth = () => {
       return null;
     }
   };
+
+  if (isLoading) {
+    return { 
+      generateBasicAuth: () => null,
+      updateCredentials: async () => {},
+      toggleAuthEnabled: async () => {},
+      authEnabled: false,
+      authUsername: "",
+      authPassword: ""
+    };
+  }
 
   return { 
     generateBasicAuth,

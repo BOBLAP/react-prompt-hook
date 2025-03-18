@@ -1,6 +1,8 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { fetchAuthConfig, updateAuthConfig } from "@/services/api";
+import { toast } from "sonner";
 
 // Define default credentials
 const DEFAULT_USERNAME = "bob";
@@ -23,15 +25,29 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [credentials, setCredentials] = useState<Credentials>(() => {
-    // Try to load saved credentials or use defaults
-    const savedCredentials = localStorage.getItem("credentials");
-    return savedCredentials 
-      ? JSON.parse(savedCredentials) 
-      : { username: DEFAULT_USERNAME, password: DEFAULT_PASSWORD };
+  const [credentials, setCredentials] = useState<Credentials>({ 
+    username: DEFAULT_USERNAME, 
+    password: DEFAULT_PASSWORD 
   });
+  const [isLoading, setIsLoading] = useState(true);
   
   const navigate = useNavigate();
+
+  // Charger les identifiants depuis le serveur au démarrage
+  useEffect(() => {
+    const loadCredentials = async () => {
+      try {
+        const config = await fetchAuthConfig();
+        setCredentials(config);
+      } catch (error) {
+        console.error("Error loading auth credentials:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCredentials();
+  }, []);
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -56,14 +72,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate("/login");
   };
 
-  const updateCredentials = (newUsername: string, newPassword: string) => {
+  const updateCredentials = async (newUsername: string, newPassword: string) => {
+    if (!newUsername) {
+      toast.error("Le nom d'utilisateur ne peut pas être vide");
+      return;
+    }
+
     const newCredentials = { 
       username: newUsername, 
-      password: newPassword 
+      password: newPassword || credentials.password
     };
-    setCredentials(newCredentials);
-    localStorage.setItem("credentials", JSON.stringify(newCredentials));
+
+    try {
+      const success = await updateAuthConfig(newCredentials);
+      
+      if (success) {
+        setCredentials(newCredentials);
+        toast.success("Identifiants mis à jour avec succès");
+      } else {
+        toast.error("Erreur lors de la mise à jour des identifiants");
+      }
+    } catch (error) {
+      console.error("Error updating credentials:", error);
+      toast.error("Erreur lors de la mise à jour des identifiants");
+    }
   };
+
+  if (isLoading) {
+    return null; // ou un composant de chargement
+  }
 
   return (
     <AuthContext.Provider value={{ 
