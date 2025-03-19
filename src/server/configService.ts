@@ -47,19 +47,48 @@ const ensureConfigFile = (): void => {
     // S'assurer que le répertoire config existe
     if (!fs.existsSync(CONFIG_DIR)) {
       console.log(`Création du répertoire config: ${CONFIG_DIR}`);
-      fs.mkdirSync(CONFIG_DIR, { recursive: true });
+      fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o755 });
+      console.log(`Répertoire config créé avec permissions: 0755`);
     }
 
     // Vérifier si le fichier existe
     if (!fs.existsSync(CONFIG_FILE_PATH)) {
       console.log('Fichier de configuration non trouvé, création avec les valeurs par défaut');
-      fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(DEFAULT_CONFIG, null, 2));
-      console.log('Configuration file created with default values');
+      
+      // Écrire le fichier avec des permissions 0644 (lecture/écriture pour propriétaire, lecture pour les autres)
+      fs.writeFileSync(
+        CONFIG_FILE_PATH, 
+        JSON.stringify(DEFAULT_CONFIG, null, 2),
+        { mode: 0o644 }
+      );
+      
+      console.log(`Configuration file created with default values and permissions: 0644`);
+      
+      // Vérifier que le fichier a été créé correctement
+      if (fs.existsSync(CONFIG_FILE_PATH)) {
+        const stats = fs.statSync(CONFIG_FILE_PATH);
+        console.log(`Fichier créé avec succès. Mode: ${stats.mode.toString(8)}`);
+      } else {
+        console.error('Échec de création du fichier malgré aucune erreur levée');
+      }
     } else {
       console.log('Fichier de configuration existant trouvé');
+      // Vérifier les permissions actuelles
+      const stats = fs.statSync(CONFIG_FILE_PATH);
+      console.log(`Permissions actuelles du fichier: ${stats.mode.toString(8)}`);
+      
+      // Assurer que les permissions sont correctes (0644)
+      fs.chmodSync(CONFIG_FILE_PATH, 0o644);
+      console.log('Permissions du fichier ajustées à 0644');
     }
   } catch (error) {
     console.error('Error creating config file:', error);
+    console.error('Details:', error instanceof Error ? error.message : String(error));
+    
+    // Afficher plus d'informations sur l'environnement
+    console.error(`User: ${process.getuid?.() || 'N/A'}, Group: ${process.getgid?.() || 'N/A'}`);
+    console.error(`Current working directory: ${process.cwd()}`);
+    console.error(`Config directory absolute path: ${path.resolve(CONFIG_DIR)}`);
   }
 };
 
@@ -72,6 +101,14 @@ export const getConfig = (): AppConfig => {
     return JSON.parse(configData);
   } catch (error) {
     console.error('Error reading config file:', error);
+    console.error('Falling back to default config');
+    // Tenter de recréer le fichier en cas d'erreur de lecture
+    try {
+      fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(DEFAULT_CONFIG, null, 2), { mode: 0o644 });
+      console.log('Config file recreated with default values');
+    } catch (writeError) {
+      console.error('Failed to recreate config file:', writeError);
+    }
     return DEFAULT_CONFIG;
   }
 };
@@ -84,14 +121,22 @@ export const saveConfig = (config: AppConfig): void => {
     // S'assurer que le répertoire existe
     if (!fs.existsSync(CONFIG_DIR)) {
       console.log(`Création du répertoire config: ${CONFIG_DIR}`);
-      fs.mkdirSync(CONFIG_DIR, { recursive: true });
+      fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o755 });
     }
     
+    // Sauvegarder avec les nouvelles données avec mode 0644
     fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(config, null, 2), { 
       encoding: 'utf8', 
-      mode: 0o666 // Permissions de lecture/écriture pour tous
+      mode: 0o644
     });
+    
     console.log('Configuration saved successfully');
+    
+    // Vérification post-sauvegarde
+    if (fs.existsSync(CONFIG_FILE_PATH)) {
+      const stats = fs.statSync(CONFIG_FILE_PATH);
+      console.log(`File stats after save - Size: ${stats.size}, Mode: ${stats.mode.toString(8)}`);
+    }
   } catch (error) {
     console.error('Error saving config file:', error);
     console.error('Details:', error instanceof Error ? error.message : String(error));
