@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { 
   getAuthConfig, 
@@ -143,18 +142,6 @@ app.post('/api/config/webhook', (req, res) => {
     res.status(500).json({ success: false, error: String(error) });
   }
 });
-
-// Vérifier la présence du répertoire config
-const CONFIG_DIR = path.join(process.cwd(), 'config');
-if (!fs.existsSync(CONFIG_DIR)) {
-  console.log(`Création du répertoire config: ${CONFIG_DIR}`);
-  try {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
-    console.log('Répertoire config créé avec succès');
-  } catch (error) {
-    console.error('Erreur lors de la création du répertoire config:', error);
-  }
-}
 
 // Servir les fichiers statiques du build APRÈS les routes API
 const STATIC_DIR = path.join(process.cwd(), 'dist');
