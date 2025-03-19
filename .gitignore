@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# To preserve local install on VPS
+Dockerfile
+Package-lock.json
+vite.config.js
