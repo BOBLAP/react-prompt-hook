@@ -78,7 +78,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div>
       <div className="fixed top-4 right-4 z-10 flex gap-2">
         <Button 
           variant="outline" 

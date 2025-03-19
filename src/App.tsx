@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { WebhookSettingsProvider } from "@/hooks/useWebhookSettings";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Layout from "@/components/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -27,7 +28,9 @@ const App = () => (
                 path="/" 
                 element={
                   <ProtectedRoute>
-                    <Index />
+                    <Layout>
+                      <Index />
+                    </Layout>
                   </ProtectedRoute>
                 } 
               />

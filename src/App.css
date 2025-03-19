@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -39,4 +40,39 @@
 
 .read-the-docs {
   color: #888;
+}
+
+.alien-gradient {
+  position: relative;
+  overflow: hidden;
+}
+
+.alien-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #8B5CF6,
+    #D946EF,
+    #F97316,
+    #0EA5E9,
+    #8B5CF6
+  );
+  background-size: 500% 500%;
+  animation: alienGradientAnimation 8s linear infinite;
+  mix-blend-mode: multiply;
+  opacity: 0.8;
+}
+
+@keyframes alienGradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
