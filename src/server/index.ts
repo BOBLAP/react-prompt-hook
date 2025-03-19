@@ -10,6 +10,7 @@ import {
 } from './configService';
 import path from 'path';
 import fs from 'fs';
+import './dbService'; // Import to ensure database is initialized
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,48 +24,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Vérification et initialisation du répertoire config au démarrage du serveur
+// Define config directory for logging
 const CONFIG_DIR = path.join(process.cwd(), 'config');
-const CONFIG_FILE_PATH = path.join(CONFIG_DIR, 'config.json');
 
-console.log(`Démarrage du serveur - Vérification de la configuration:`);
+console.log(`Démarrage du serveur avec SQLite:`);
 console.log(`Répertoire courant: ${process.cwd()}`);
 console.log(`Répertoire config: ${CONFIG_DIR}`);
-console.log(`Fichier de configuration: ${CONFIG_FILE_PATH}`);
-
-// Vérifier la présence du répertoire config
-if (!fs.existsSync(CONFIG_DIR)) {
-  console.log(`Création du répertoire config: ${CONFIG_DIR}`);
-  try {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o755 });
-    console.log('Répertoire config créé avec succès avec permissions 0755');
-  } catch (error) {
-    console.error('Erreur lors de la création du répertoire config:', error);
-    console.error('Details:', error instanceof Error ? error.message : String(error));
-    console.error(`User: ${process.getuid?.() || 'N/A'}, Group: ${process.getgid?.() || 'N/A'}`);
-  }
-} else {
-  console.log('Répertoire config existant trouvé');
-  try {
-    const stats = fs.statSync(CONFIG_DIR);
-    console.log(`Permissions du répertoire config: ${stats.mode.toString(8)}`);
-    
-    // Assurez-vous que le répertoire a les bonnes permissions
-    fs.chmodSync(CONFIG_DIR, 0o755);
-    console.log('Permissions du répertoire config ajustées à 0755');
-  } catch (error) {
-    console.error('Erreur lors de la vérification/modification des permissions:', error);
-  }
-}
-
-// Initialiser le fichier de configuration en appelant getConfig
-try {
-  // Cette appelle va créer le fichier s'il n'existe pas
-  const config = getAuthConfig();
-  console.log('Configuration initialisée avec succès');
-} catch (error) {
-  console.error('Erreur lors de l\'initialisation de la configuration:', error);
-}
 
 // API Routes - Important de placer ces routes AVANT les routes statiques
 // pour éviter que les requêtes API soient traitées comme des fichiers statiques
